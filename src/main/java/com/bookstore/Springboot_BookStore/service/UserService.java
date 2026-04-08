@@ -2,12 +2,16 @@ package com.bookstore.Springboot_BookStore.service;
 
 import com.bookstore.Springboot_BookStore.dto.BookDTO;
 import com.bookstore.Springboot_BookStore.dto.UserDTO;
+import com.bookstore.Springboot_BookStore.exception.ResourceNotFoundException;
 import com.bookstore.Springboot_BookStore.model.Book;
 import com.bookstore.Springboot_BookStore.model.User;
 import com.bookstore.Springboot_BookStore.repository.UserRepository;
 import lombok.AllArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @AllArgsConstructor
@@ -27,6 +31,18 @@ public class UserService {
         // Convert saved entity back to DTO and return
         return modelMapper.map(savedUser, UserDTO.class);
     }
+
+      public List<UserDTO> getAllUser(){
+        List<User> users = userRepository.findAll();
+        return users.stream().map(user -> modelMapper.map(user,UserDTO.class))
+                .collect(Collectors.toList());
+      }
+
+      public UserDTO getByID(Long id){
+        User  userID = userRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        return modelMapper.map(userID,UserDTO.class);
+      }
+
 
 
     public UserDTO userUpdate(Long id, UserDTO userDTO) {

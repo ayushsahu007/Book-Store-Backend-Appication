@@ -39,6 +39,7 @@ public class BookService {
                 .map(book -> modelMapper.map(book, BookDTO.class))
                 .collect(Collectors.toList()); //
     }
+
     public  BookDTO getById(Long id) {
         Book bookId = bookRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Book not found"));
         return modelMapper.map(bookId, BookDTO.class);

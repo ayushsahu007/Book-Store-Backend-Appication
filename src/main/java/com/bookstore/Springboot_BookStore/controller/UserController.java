@@ -1,42 +1,83 @@
 package com.bookstore.Springboot_BookStore.controller;
 
+import com.bookstore.Springboot_BookStore.dto.BookDTO;
 import com.bookstore.Springboot_BookStore.dto.UserDTO;
 import com.bookstore.Springboot_BookStore.model.User;
 import com.bookstore.Springboot_BookStore.service.UserService;
+import com.bookstore.Springboot_BookStore.util.RestResponseBuilder;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/users")
+@RequiredArgsConstructor
 public class UserController {
 
-    @Autowired
-    private UserService userService;
+
+    private final UserService userService;
+    private final RestResponseBuilder responseBuilder;
 
 
    @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody UserDTO userDTO) {
-        userService.register(userDTO);
-       return ResponseEntity.ok("Register");
+    public ResponseEntity<?> register(@Valid @RequestBody UserDTO userDTO , HttpServletRequest request) {
+         UserDTO userRegister =  userService.register(userDTO);
+       return responseBuilder.success(
+               HttpStatus.CREATED,
+               "User Registerd",
+               userRegister,
+               request
+       );
     }
 
+    @GetMapping("all-users")
+    public ResponseEntity<?>  getAllUsers(HttpServletRequest request) {
+        List<UserDTO> allUser = userService.getAllUser();
+        return responseBuilder.success(
+                HttpStatus.OK,
+                "User Fetched",
+                allUser,
+                request
+        );
+    }
+
+    @GetMapping("/id/{id}")
+    public ResponseEntity<?> getUserById(@PathVariable Long id, HttpServletRequest request) {
+        UserDTO byID = userService.getByID(id);
+        return responseBuilder.success(
+                HttpStatus.OK,
+                "User Fetched",
+                byID,
+                request
+        );
+    }
+
+
   @PatchMapping("/id/{id}")
-    public ResponseEntity<UserDTO> update(@PathVariable Long id ,@RequestBody UserDTO userDTO) {
+    public ResponseEntity<?> update(@PathVariable Long id ,@Valid @RequestBody UserDTO userDTO, HttpServletRequest request) {
       UserDTO update =  userService.userUpdate(id , userDTO);
-      return ResponseEntity.ok(update);
+      return responseBuilder.success(
+              HttpStatus.OK,
+              "user update",
+              update,
+              request
+      );
   }
 
     @DeleteMapping("/id/{id}")
-    public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
-        boolean deleted = userService.deleteUser(id); // service should return true if deleted
-
-        if (deleted) {
-            return ResponseEntity.noContent().build(); // 204 No Content
-        } else {
-            return ResponseEntity.notFound().build(); // 404 Not Found
-        }
+    public ResponseEntity<?> deleteUser(@PathVariable Long id,HttpServletRequest request) {
+       userService.deleteUser(id); // service should return true if deleted
+        return responseBuilder.success(
+                HttpStatus.OK,
+                "user deleted",
+                null,
+                request
+        );
     }
-
-
 }

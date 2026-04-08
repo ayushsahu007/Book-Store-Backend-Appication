@@ -3,6 +3,7 @@ package com.bookstore.Springboot_BookStore.model;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.Collection;
 import java.util.List;
 @Getter
 @Setter
@@ -23,6 +24,5 @@ public class Cart {
 
     @OneToMany(mappedBy = "cart" ,cascade = CascadeType.ALL,orphanRemoval = true)
     private List<CartItem> cartItems;
-
 
 }
