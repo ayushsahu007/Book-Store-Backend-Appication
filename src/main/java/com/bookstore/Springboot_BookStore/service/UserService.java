@@ -49,7 +49,7 @@ public class UserService {
         User user = userRepository.findById(id).orElseThrow(() -> new RuntimeException("user Not Found"));
 
         if (userDTO.getUserName() != null) {
-            user.setUserName(userDTO.getUserName());
+            user.setUsername(userDTO.getUserName());
         }
 
         if (userDTO.getPassword() != null) {
