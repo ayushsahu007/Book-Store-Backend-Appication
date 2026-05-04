@@ -1,5 +1,7 @@
 package com.bookstore.Springboot_BookStore.controller;
 
+import com.bookstore.Springboot_BookStore.dto.OrderRequestDTO;
+import com.bookstore.Springboot_BookStore.dto.OrderResponseDTO;
 import com.bookstore.Springboot_BookStore.model.Order;
 import com.bookstore.Springboot_BookStore.service.OrderService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,8 +14,8 @@ public class OrderController {
     @Autowired
     private OrderService orderService;
 
-    @PostMapping("/place")
-    public Order placeOrder(@RequestParam Long userId, @RequestParam Long cartId) {
-        return orderService.placeOrder(userId, cartId);
+    @PostMapping()
+    public OrderResponseDTO placeOrder(@RequestBody OrderRequestDTO requestDTO) {
+        return orderService.placeOrder(requestDTO);
     }
 }

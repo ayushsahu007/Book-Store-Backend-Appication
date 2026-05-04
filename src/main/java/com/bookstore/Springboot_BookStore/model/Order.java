@@ -3,6 +3,8 @@ package com.bookstore.Springboot_BookStore.model;
 import jakarta.persistence.*;
 import lombok.Data;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
@@ -16,6 +18,7 @@ public class Order {
 
     private Double totalAmount;
     private String status;
+    private LocalDateTime OrderDate;
 
     @ManyToOne
     @JoinColumn(name = "user_id")

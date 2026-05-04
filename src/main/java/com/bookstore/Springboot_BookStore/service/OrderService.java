@@ -1,44 +1,54 @@
 package com.bookstore.Springboot_BookStore.service;
 
-import com.bookstore.Springboot_BookStore.model.Cart;
-import com.bookstore.Springboot_BookStore.model.CartItem;
-import com.bookstore.Springboot_BookStore.model.Order;
-import com.bookstore.Springboot_BookStore.model.OrderItem;
+import com.bookstore.Springboot_BookStore.dto.OrderItemResponseDTO;
+import com.bookstore.Springboot_BookStore.dto.OrderRequestDTO;
+import com.bookstore.Springboot_BookStore.dto.OrderResponseDTO;
+import com.bookstore.Springboot_BookStore.model.*;
 import com.bookstore.Springboot_BookStore.repository.CartRepository;
 import com.bookstore.Springboot_BookStore.repository.OrderRepository;
+import com.bookstore.Springboot_BookStore.repository.UserRepository;
 import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
+import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
 @Service
+@RequiredArgsConstructor
 public class OrderService {
 
-    @Autowired
-    private CartRepository cartRepository;
+    private final CartRepository cartRepository;
+    private final OrderRepository orderRepository;
+    private final UserRepository userRepository;
+    private final ModelMapper modelMapper;
 
-    @Autowired
-    private OrderRepository orderRepository;
+
 
     @Transactional
-    public Order placeOrder(Long userId, Long cartId) {
+    public OrderResponseDTO placeOrder(OrderRequestDTO requestDTO) {
 
-        Cart cart = cartRepository.findById(cartId)
+        User user = userRepository.findById(requestDTO.getUserId())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        Cart cart = cartRepository.findById(requestDTO.getCartId())
                 .orElseThrow(() -> new RuntimeException("Cart not found"));
 
         // ✅ security check
-        if (!cart.getUser().getId().equals(userId)) {
+        if (!cart.getUser().getId().equals(requestDTO.getUserId())) {
             throw new RuntimeException("Cart does not belong to user");
         }
 
         Order order = new Order();
-        order.setUser(cart.getUser());
+        order.setUser(user);
+        order.setOrderDate(LocalDateTime.now());
         order.setStatus("PLACED");
 
         List<OrderItem> orderItems = new ArrayList<>();
-        double totalPrice = 0.0;
+        double totalAmount = 0.0;
 
         for (CartItem cartItem : cart.getCartItems()) {
 
@@ -47,25 +57,54 @@ public class OrderService {
             orderItem.setBook(cartItem.getBook());
             orderItem.setQuantity(cartItem.getQuantity());
 
-            double itemTotal = cartItem.getQuantity() * cartItem.getBook().getPrice();
+            //price freeze
+            double bookPrice = cartItem.getBook().getPrice();
+            double itemTotal = cartItem.getQuantity() * bookPrice;
+
             orderItem.setPrice(itemTotal);
 
-            totalPrice += itemTotal;
-
+            totalAmount += itemTotal;
             orderItems.add(orderItem);
         }
 
         order.setItems(orderItems);
-        order.setTotalAmount(totalPrice);
+        order.setTotalAmount(totalAmount);
 
         Order savedOrder = orderRepository.save(order);
 
         // ✅ clear cart instead of delete
         cart.getCartItems().clear();
-        cart.setTotalPrice(0.0);
         cartRepository.save(cart);
 
-        return savedOrder;
+        return convertToDTO(savedOrder);
+    }
+
+    // ✅ Entity → DTO conversion
+    private OrderResponseDTO convertToDTO(Order order) {
+
+        OrderResponseDTO dto = modelMapper.map(order, OrderResponseDTO.class);
+
+        dto.setUserId(order.getUser().getId());
+
+        List<OrderItemResponseDTO> itemDTOs = order.getItems().stream().map(item -> {
+
+            OrderItemResponseDTO itemDTO = new OrderItemResponseDTO();
+
+            itemDTO.setItemId(item.getId());
+            itemDTO.setBookId(item.getBook().getId());
+            itemDTO.setBookName(item.getBook().getTitle());
+            itemDTO.setQuantity(item.getQuantity());
+
+            double total = item.getPrice(); // already stored
+            itemDTO.setTotalPrice(total);
+
+            return itemDTO;
+
+        }).toList();
+
+        dto.setItems(itemDTOs);
+
+        return dto;
     }
 
 
